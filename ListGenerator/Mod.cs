@@ -54,7 +54,7 @@ namespace ListGenerator
 
 		public static Mod ParseIniFile(string zipFileName, string iniFileContents)
 		{
-			var lines = iniFileContents.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+			var lines = iniFileContents.Split(new[] { '\r', '\n', '\0' }, StringSplitOptions.RemoveEmptyEntries);
 
 			if (lines[0] != "[PAMM]")
 				throw new Exception("First line of ini file is not '[PAMM]'");
