@@ -45,6 +45,11 @@ namespace ListGenerator
 			values.TryGetValue("version", out Version);
 			values.TryGetValue("build", out Build);
 			values.TryGetValue("description", out Description);
+
+			if (Link == null)
+				Console.WriteLine("Warning: {0} has no Link", zipFileName);
+			if (Description == null)
+				Console.WriteLine("Warning: {0} has no Description", zipFileName);
 		}
 
 		public static Mod ParseIniFile(string zipFileName, string iniFileContents)
