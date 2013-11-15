@@ -17,9 +17,14 @@ namespace ListGenerator
 			new Program().Run();
 		}
 
-		public static string BaseUrl
+		public static string BaseModUrl
 		{
-			get { return ConfigurationManager.AppSettings["baseUrl"]; }
+			get { return ConfigurationManager.AppSettings["baseModUrl"]; }
+		}
+
+		public static string BaseIconsUrl
+		{
+			get { return ConfigurationManager.AppSettings["baseIconUrl"]; }
 		}
 
 		private void Run()

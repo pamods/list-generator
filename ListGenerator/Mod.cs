@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace ListGenerator
@@ -8,6 +9,7 @@ namespace ListGenerator
 	{
 		public string FileName { get; set; }
 		public DateTime Date { get; set; }
+		public string Icon;
 
 		#region From ini file
 
@@ -30,12 +32,17 @@ namespace ListGenerator
 
 		public string Url
 		{
-			get { return Program.BaseUrl + FileName; }
+			get { return Program.BaseModUrl + FileName; }
 		}
 
 		public string DateString
 		{
 			get { return Date.ToString("yyyy/MM/dd"); }
+		}
+
+		public string IconUrl
+		{
+			get { return Program.BaseIconsUrl + Icon; }
 		}
 
 		#endregion
@@ -51,6 +58,16 @@ namespace ListGenerator
 			values.TryGetValue("version", out Version);
 			values.TryGetValue("build", out Build);
 			values.TryGetValue("description", out Description);
+
+			if (File.Exists("icons/" + ShortName + ".png"))
+			{
+				Icon = ShortName + ".png";
+			}
+			else
+			{
+				Icon = "default.png";
+				Console.WriteLine("Warning: {0} has no icon (icons/{1}.png) using default", zipFileName, ShortName);
+			}
 
 			if (Link == null)
 				Console.WriteLine("Warning: {0} has no Link", zipFileName);
