@@ -7,6 +7,7 @@ namespace ListGenerator
 	internal class Mod
 	{
 		public string FileName { get; set; }
+		public DateTime Date { get; set; }
 
 		#region From ini file
 
@@ -29,7 +30,12 @@ namespace ListGenerator
 
 		public string Url
 		{
-			get { return Program.BaseUrl + FileName; }
+			get { return Program.BaseUrl + FileName.Substring(5); }
+		}
+
+		public string DateString
+		{
+			get { return Date.ToString("yyyy/MM/dd"); }
 		}
 
 		#endregion

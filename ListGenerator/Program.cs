@@ -26,6 +26,8 @@ namespace ListGenerator
 		{
 			var modList = LoadMods();
 
+			ApplyDescriptionUnderrides(modList);
+
 			GenerateIniFile(modList);
 		}
 
@@ -49,7 +51,9 @@ namespace ListGenerator
 
 					var iniFileContents = Encoding.UTF8.GetString(memoryStream.GetBuffer());
 
-					res.Add(Mod.ParseIniFile(filename, iniFileContents));
+					var mod = Mod.ParseIniFile(filename, iniFileContents);
+					mod.Date = GetLatestModifiedTime(zip);
+					res.Add(mod);
 				}
 				catch(Exception ex)
 				{
@@ -70,6 +74,35 @@ namespace ListGenerator
 				}
 			}
 			return null;
+		}
+
+		private DateTime GetLatestModifiedTime(ZipFile zip)
+		{
+			DateTime time = DateTime.MinValue;
+			foreach (ZipEntry entry in zip)
+			{
+				if (entry.DateTime > time)
+					time = entry.DateTime;
+			}
+			return time;
+		}
+
+		/// <summary>
+		/// Apply descriptions from file unless the mod already has a description
+		/// </summary>
+		/// <param name="modList"></param>
+		private void ApplyDescriptionUnderrides(List<Mod> modList)
+		{
+			foreach (var line in File.ReadAllLines("templates/descriptions.txt").Where(x => x.Contains('=')))
+			{
+				var equalsIndex = line.IndexOf('=');
+				var key = line.Substring(0, equalsIndex);
+				var value = line.Substring(equalsIndex + 1);
+
+				var mod = modList.FirstOrDefault(m => m.ShortName == key);
+				if (mod != null && string.IsNullOrWhiteSpace(mod.Description))
+					mod.Description = value;
+			}
 		}
 
 		private void GenerateIniFile(List<Mod> modList)

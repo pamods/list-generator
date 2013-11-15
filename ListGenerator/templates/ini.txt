@@ -18,5 +18,6 @@ Icon=http://pa.raevn.com/icons/generic.png
 Category={{{Category}}}
 Version={{{Version}}}
 Build={{{Build}}}
+Date={{{DateString}}}
 
 {{/mods}}
