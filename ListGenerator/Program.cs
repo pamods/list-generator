@@ -33,6 +33,8 @@ namespace ListGenerator
 
 			ApplyDescriptionUnderrides(modList);
 
+			modList = modList.OrderBy(x => x.ShortName).ToList();
+
 			GenerateIniFile(modList);
 		}
 
