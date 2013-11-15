@@ -25,12 +25,12 @@ namespace ListGenerator
 
 		public string ShortName
 		{
-			get { return FileName.Substring(5, FileName.IndexOf('_') - 5); }
+			get { return FileName.Substring(0, FileName.LastIndexOf('_')); }
 		}
 
 		public string Url
 		{
-			get { return Program.BaseUrl + FileName.Substring(5); }
+			get { return Program.BaseUrl + FileName; }
 		}
 
 		public string DateString

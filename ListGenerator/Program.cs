@@ -51,7 +51,7 @@ namespace ListGenerator
 
 					var iniFileContents = Encoding.UTF8.GetString(memoryStream.GetBuffer());
 
-					var mod = Mod.ParseIniFile(filename, iniFileContents);
+					var mod = Mod.ParseIniFile(filename.Substring(5), iniFileContents);
 					mod.Date = GetLatestModifiedTime(zip);
 					res.Add(mod);
 				}
