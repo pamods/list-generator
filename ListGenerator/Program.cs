@@ -91,7 +91,7 @@ namespace ListGenerator
 				if (entry.DateTime > time)
 					time = entry.DateTime;
 			}
-			return time;
+			return time.ToUniversalTime();
 		}
 
 		/// <summary>
