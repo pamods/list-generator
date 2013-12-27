@@ -208,7 +208,7 @@ namespace ListGenerator
                   writer.WritePropertyName("build");
                   writer.WriteValue(nmod.build);
                   writer.WritePropertyName("date");
-                  writer.WriteValue(nmod.DateString);
+                  writer.WriteValue(nmod.date);
                   writer.WritePropertyName("forum");
                   writer.WriteValue(nmod.forum);
                   writer.WritePropertyName("url");
