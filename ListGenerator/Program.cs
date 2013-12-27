@@ -48,7 +48,7 @@ namespace ListGenerator
 
             nmodList = nmodList.OrderBy(x => x.identifier).ToList();
 
-            GenerateJSONFile(nmodList);
+            GenerateJSONFileNewtonSoft(nmodList);
 			
 		}
 
@@ -180,7 +180,64 @@ namespace ListGenerator
 
         private void GenerateJSONFile(List<nMod> nmodList)
         {
+            //not used anymore is a hassle to get the ending , right
             Render.FileToFile("templates/json.txt", new { mods = nmodList }, "modlist.json", new RenderContextBehaviour { RaiseExceptionOnDataContextMiss = false, RaiseExceptionOnEmptyStringValue = false });
+        }
+
+        private void GenerateJSONFileNewtonSoft(List<nMod> nmodList)
+        {
+            StringBuilder sb = new StringBuilder();
+            StreamWriter sw = new StreamWriter("modlist.json");
+            
+            using (JsonWriter writer = new JsonTextWriter(sw))
+            {
+              writer.Formatting = Formatting.Indented;
+              writer.WriteStartObject();
+              foreach(var nmod in nmodList)
+              {
+                  writer.WritePropertyName(nmod.id);
+                  writer.WriteStartObject();
+                  writer.WritePropertyName("display_name");
+                  writer.WriteValue(nmod.display_name);
+                  writer.WritePropertyName("description");
+                  writer.WriteValue(nmod.description);
+                  writer.WritePropertyName("author");
+                  writer.WriteValue(nmod.author);
+                  writer.WritePropertyName("version");
+                  writer.WriteValue(nmod.version);
+                  writer.WritePropertyName("build");
+                  writer.WriteValue(nmod.build);
+                  writer.WritePropertyName("date");
+                  writer.WriteValue(nmod.DateString);
+                  writer.WritePropertyName("forum");
+                  writer.WriteValue(nmod.forum);
+                  writer.WritePropertyName("url");
+                  writer.WriteValue(nmod.Url);
+                  if(nmod.category != null)
+                  {
+                      writer.WritePropertyName("category");
+                      writer.WriteStartArray();
+                      foreach (var s in nmod.category)
+                      {
+                          writer.WriteValue(s);
+                      }
+                      writer.WriteEnd();
+                  }
+                  if (nmod.requires != null)
+                  {
+                      writer.WritePropertyName("requires");
+                      writer.WriteStartArray();
+                      foreach (var s in nmod.requires)
+                      {
+                          writer.WriteValue(s);
+                      }
+                      writer.WriteEnd();
+                  }
+                  writer.WriteEndObject();
+
+              }
+              writer.WriteEndObject();
+            }
         }
 	}
 }
