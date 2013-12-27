@@ -7,6 +7,7 @@ using System.Text;
 using ICSharpCode.SharpZipLib.Core;
 using ICSharpCode.SharpZipLib.Zip;
 using Nustache.Core;
+using Newtonsoft.Json;
 
 namespace ListGenerator
 {
@@ -22,6 +23,11 @@ namespace ListGenerator
 			get { return ConfigurationManager.AppSettings["baseModUrl"]; }
 		}
 
+        public static string BaseNewModUrl
+        {
+            get { return ConfigurationManager.AppSettings["baseNewModUrl"]; }
+        }
+
 		public static string BaseIconsUrl
 		{
 			get { return ConfigurationManager.AppSettings["baseIconUrl"]; }
@@ -29,13 +35,21 @@ namespace ListGenerator
 
 		private void Run()
 		{
+            
 			var modList = LoadMods();
 
 			ApplyDescriptionUnderrides(modList);
 
 			modList = modList.OrderBy(x => x.ShortName).ToList();
 
-			GenerateIniFile(modList);
+            GenerateIniFile(modList);
+            
+            var nmodList = LoadnMods();
+
+            nmodList = nmodList.OrderBy(x => x.identifier).ToList();
+
+            GenerateJSONFile(nmodList);
+			
 		}
 
 		private List<Mod> LoadMods()
@@ -71,6 +85,41 @@ namespace ListGenerator
 			return res;
 		}
 
+        private List<nMod> LoadnMods()
+        {
+            var res = new List<nMod>();
+
+            foreach (var filename in Directory.EnumerateFiles("user_mods", "*.zip"))
+            {
+                try
+                {
+                    var zip = new ZipFile(filename);
+                    var zipJSONFile = FindJSONFile(zip);
+
+                    if (zipJSONFile == null)
+                        throw new Exception("Unable to find modinfo.json file, or multiple modinfo.json files found");
+
+                    var stream = zip.GetInputStream(zipJSONFile);
+                    var memoryStream = new MemoryStream();
+                    StreamUtils.Copy(stream, memoryStream, new byte[4196]);
+
+                    
+                    var jsonFileContents = Encoding.UTF8.GetString(memoryStream.GetBuffer());
+
+                    var nmod = JsonConvert.DeserializeObject<nMod>(jsonFileContents);
+                    nmod.Date = GetLatestModifiedTime(zip);
+                    nmod.FileName = new FileInfo(filename).Name;
+                    res.Add(nmod);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed reading {0}, Error: {1}", filename, ex);
+                }
+            }
+
+            return res;
+        }
+
 		private ZipEntry FindIniFile(ZipFile zip)
 		{
 			foreach (ZipEntry entry in zip)
@@ -82,6 +131,18 @@ namespace ListGenerator
 			}
 			return null;
 		}
+
+        private ZipEntry FindJSONFile(ZipFile zip)
+        {
+            foreach (ZipEntry entry in zip)
+            {
+                if (entry.Name.EndsWith("/modinfo.json", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return entry;
+                }
+            }
+            return null;
+        }
 
 		private DateTime GetLatestModifiedTime(ZipFile zip)
 		{
@@ -116,5 +177,10 @@ namespace ListGenerator
 		{
 			Render.FileToFile("templates/ini.txt", new { mods = modList }, "modlist.ini", new RenderContextBehaviour { RaiseExceptionOnDataContextMiss = false, RaiseExceptionOnEmptyStringValue = false });
 		}
+
+        private void GenerateJSONFile(List<nMod> nmodList)
+        {
+            Render.FileToFile("templates/json.txt", new { mods = nmodList }, "modlist.json", new RenderContextBehaviour { RaiseExceptionOnDataContextMiss = false, RaiseExceptionOnEmptyStringValue = false });
+        }
 	}
 }
