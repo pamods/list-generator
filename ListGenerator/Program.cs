@@ -23,10 +23,10 @@ namespace ListGenerator
 			get { return ConfigurationManager.AppSettings["baseModUrl"]; }
 		}
 
-        public static string BaseNewModUrl
-        {
-            get { return ConfigurationManager.AppSettings["baseNewModUrl"]; }
-        }
+		public static string BaseNewModUrl
+		{
+			get { return ConfigurationManager.AppSettings["baseNewModUrl"]; }
+		}
 
 		public static string BaseIconsUrl
 		{
@@ -35,21 +35,21 @@ namespace ListGenerator
 
 		private void Run()
 		{
-            
+
 			var modList = LoadMods();
 
 			ApplyDescriptionUnderrides(modList);
 
 			modList = modList.OrderBy(x => x.ShortName).ToList();
 
-            GenerateIniFile(modList);
-            
-            var nmodList = LoadnMods();
+			GenerateIniFile(modList);
 
-            nmodList = nmodList.OrderBy(x => x.identifier).ToList();
+			var nmodList = LoadnMods();
 
-            GenerateJSONFileNewtonSoft(nmodList);
-			
+			nmodList = nmodList.OrderBy(x => x.identifier).ToList();
+
+			GenerateJSONFileNewtonSoft(nmodList);
+
 		}
 
 		private List<Mod> LoadMods()
@@ -76,7 +76,7 @@ namespace ListGenerator
 					mod.Date = GetLatestModifiedTime(zip);
 					res.Add(mod);
 				}
-				catch(Exception ex)
+				catch (Exception ex)
 				{
 					Console.WriteLine("Failed reading {0}, Error: {1}", filename, ex);
 				}
@@ -85,40 +85,40 @@ namespace ListGenerator
 			return res;
 		}
 
-        private List<nMod> LoadnMods()
-        {
-            var res = new List<nMod>();
+		private List<nMod> LoadnMods()
+		{
+			var res = new List<nMod>();
 
-            foreach (var filename in Directory.EnumerateFiles("user_mods", "*.zip"))
-            {
-                try
-                {
-                    var zip = new ZipFile(filename);
-                    var zipJSONFile = FindJSONFile(zip);
+			foreach (var filename in Directory.EnumerateFiles("user_mods", "*.zip"))
+			{
+				try
+				{
+					var zip = new ZipFile(filename);
+					var zipJSONFile = FindJSONFile(zip);
 
-                    if (zipJSONFile == null)
-                        throw new Exception("Unable to find modinfo.json file, or multiple modinfo.json files found");
+					if (zipJSONFile == null)
+						throw new Exception("Unable to find modinfo.json file, or multiple modinfo.json files found");
 
-                    var stream = zip.GetInputStream(zipJSONFile);
-                    var memoryStream = new MemoryStream();
-                    StreamUtils.Copy(stream, memoryStream, new byte[4196]);
+					var stream = zip.GetInputStream(zipJSONFile);
+					var memoryStream = new MemoryStream();
+					StreamUtils.Copy(stream, memoryStream, new byte[4196]);
 
-                    
-                    var jsonFileContents = Encoding.UTF8.GetString(memoryStream.GetBuffer());
 
-                    var nmod = JsonConvert.DeserializeObject<nMod>(jsonFileContents);
-                    nmod.Date = GetLatestModifiedTime(zip);
-                    nmod.FileName = new FileInfo(filename).Name;
-                    res.Add(nmod);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Failed reading {0}, Error: {1}", filename, ex);
-                }
-            }
+					var jsonFileContents = Encoding.UTF8.GetString(memoryStream.GetBuffer());
 
-            return res;
-        }
+					var nmod = JsonConvert.DeserializeObject<nMod>(jsonFileContents);
+					nmod.Date = GetLatestModifiedTime(zip);
+					nmod.FileName = new FileInfo(filename).Name;
+					res.Add(nmod);
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine("Failed reading {0}, Error: {1}", filename, ex);
+				}
+			}
+
+			return res;
+		}
 
 		private ZipEntry FindIniFile(ZipFile zip)
 		{
@@ -132,17 +132,17 @@ namespace ListGenerator
 			return null;
 		}
 
-        private ZipEntry FindJSONFile(ZipFile zip)
-        {
-            foreach (ZipEntry entry in zip)
-            {
-                if (entry.Name.EndsWith("/modinfo.json", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    return entry;
-                }
-            }
-            return null;
-        }
+		private ZipEntry FindJSONFile(ZipFile zip)
+		{
+			foreach (ZipEntry entry in zip)
+			{
+				if (entry.Name.EndsWith("/modinfo.json", StringComparison.InvariantCultureIgnoreCase))
+				{
+					return entry;
+				}
+			}
+			return null;
+		}
 
 		private DateTime GetLatestModifiedTime(ZipFile zip)
 		{
@@ -178,66 +178,66 @@ namespace ListGenerator
 			Render.FileToFile("templates/ini.txt", new { mods = modList }, "modlist.ini", new RenderContextBehaviour { RaiseExceptionOnDataContextMiss = false, RaiseExceptionOnEmptyStringValue = false });
 		}
 
-        private void GenerateJSONFile(List<nMod> nmodList)
-        {
-            //not used anymore is a hassle to get the ending , right
-            Render.FileToFile("templates/json.txt", new { mods = nmodList }, "modlist.json", new RenderContextBehaviour { RaiseExceptionOnDataContextMiss = false, RaiseExceptionOnEmptyStringValue = false });
-        }
+		private void GenerateJSONFile(List<nMod> nmodList)
+		{
+			//not used anymore is a hassle to get the ending , right
+			Render.FileToFile("templates/json.txt", new { mods = nmodList }, "modlist.json", new RenderContextBehaviour { RaiseExceptionOnDataContextMiss = false, RaiseExceptionOnEmptyStringValue = false });
+		}
 
-        private void GenerateJSONFileNewtonSoft(List<nMod> nmodList)
-        {
-            StringBuilder sb = new StringBuilder();
-            StreamWriter sw = new StreamWriter("modlist.json");
-            
-            using (JsonWriter writer = new JsonTextWriter(sw))
-            {
-              writer.Formatting = Formatting.Indented;
-              writer.WriteStartObject();
-              foreach(var nmod in nmodList)
-              {
-                  writer.WritePropertyName(nmod.id);
-                  writer.WriteStartObject();
-                  writer.WritePropertyName("display_name");
-                  writer.WriteValue(nmod.display_name);
-                  writer.WritePropertyName("description");
-                  writer.WriteValue(nmod.description);
-                  writer.WritePropertyName("author");
-                  writer.WriteValue(nmod.author);
-                  writer.WritePropertyName("version");
-                  writer.WriteValue(nmod.version);
-                  writer.WritePropertyName("build");
-                  writer.WriteValue(nmod.build);
-                  writer.WritePropertyName("date");
-                  writer.WriteValue(nmod.date);
-                  writer.WritePropertyName("forum");
-                  writer.WriteValue(nmod.forum);
-                  writer.WritePropertyName("url");
-                  writer.WriteValue(nmod.Url);
-                  if(nmod.category != null)
-                  {
-                      writer.WritePropertyName("category");
-                      writer.WriteStartArray();
-                      foreach (var s in nmod.category)
-                      {
-                          writer.WriteValue(s);
-                      }
-                      writer.WriteEnd();
-                  }
-                  if (nmod.requires != null)
-                  {
-                      writer.WritePropertyName("requires");
-                      writer.WriteStartArray();
-                      foreach (var s in nmod.requires)
-                      {
-                          writer.WriteValue(s);
-                      }
-                      writer.WriteEnd();
-                  }
-                  writer.WriteEndObject();
+		private void GenerateJSONFileNewtonSoft(List<nMod> nmodList)
+		{
+			StringBuilder sb = new StringBuilder();
+			StreamWriter sw = new StreamWriter("modlist.json");
 
-              }
-              writer.WriteEndObject();
-            }
-        }
+			using (JsonWriter writer = new JsonTextWriter(sw))
+			{
+				writer.Formatting = Formatting.Indented;
+				writer.WriteStartObject();
+				foreach (var nmod in nmodList)
+				{
+					writer.WritePropertyName(nmod.id);
+					writer.WriteStartObject();
+					writer.WritePropertyName("display_name");
+					writer.WriteValue(nmod.display_name);
+					writer.WritePropertyName("description");
+					writer.WriteValue(nmod.description);
+					writer.WritePropertyName("author");
+					writer.WriteValue(nmod.author);
+					writer.WritePropertyName("version");
+					writer.WriteValue(nmod.version);
+					writer.WritePropertyName("build");
+					writer.WriteValue(nmod.build);
+					writer.WritePropertyName("date");
+					writer.WriteValue(nmod.date);
+					writer.WritePropertyName("forum");
+					writer.WriteValue(nmod.forum);
+					writer.WritePropertyName("url");
+					writer.WriteValue(nmod.Url);
+					if (nmod.category != null)
+					{
+						writer.WritePropertyName("category");
+						writer.WriteStartArray();
+						foreach (var s in nmod.category)
+						{
+							writer.WriteValue(s);
+						}
+						writer.WriteEnd();
+					}
+					if (nmod.requires != null)
+					{
+						writer.WritePropertyName("requires");
+						writer.WriteStartArray();
+						foreach (var s in nmod.requires)
+						{
+							writer.WriteValue(s);
+						}
+						writer.WriteEnd();
+					}
+					writer.WriteEndObject();
+
+				}
+				writer.WriteEndObject();
+			}
+		}
 	}
 }
