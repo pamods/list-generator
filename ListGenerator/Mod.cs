@@ -44,7 +44,7 @@ namespace ListGenerator
 
 		public string Url
 		{
-			get { return Program.BaseNewModUrl + FileName; }
+			get { return Program.BaseModUrl + FileName; }
 		}
 
 		public string DateString
@@ -55,51 +55,6 @@ namespace ListGenerator
 		public string IconUrl
 		{
 			get { return Program.BaseIconsUrl + Icon; }
-		}
-
-
-		public List<Dictionary<string, string>> requiresToString
-		{
-			get
-			{
-				var reqList = new List<Dictionary<string, string>>();
-				if (requires != null)
-				{
-					for (var i = 0; i < requires.Count; i++)
-					{
-						var dict = new Dictionary<string, string>();
-						dict["name"] = requires[i];
-						if (i + 1 != requires.Count)
-						{
-							dict["comma"] = ",";
-						}
-						reqList.Add(dict);
-					}
-				}
-				return reqList;
-			}
-		}
-
-		public List<Dictionary<string, string>> categoryToString
-		{
-			get
-			{
-				var catList = new List<Dictionary<string, string>>();
-				if (category != null)
-				{
-					for (var i = 0; i < category.Count; i++)
-					{
-						var dict = new Dictionary<string, string>();
-						dict["name"] = category[i];
-						if (i + 1 != category.Count)
-						{
-							dict["comma"] = ",";
-						}
-						catList.Add(dict);
-					}
-				}
-				return catList;
-			}
 		}
 		#endregion
 	}

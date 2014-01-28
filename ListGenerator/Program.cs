@@ -22,11 +22,6 @@ namespace ListGenerator
 			get { return ConfigurationManager.AppSettings["baseModUrl"]; }
 		}
 
-		public static string BaseNewModUrl
-		{
-			get { return ConfigurationManager.AppSettings["baseNewModUrl"]; }
-		}
-
 		public static string BaseIconsUrl
 		{
 			get { return ConfigurationManager.AppSettings["baseIconUrl"]; }
