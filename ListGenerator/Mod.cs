@@ -7,10 +7,7 @@ namespace ListGenerator
 {
 	internal class Mod
 	{
-
 		public string FileName { get; set; }
-		public DateTime Date { get; set; }
-		public string Icon;
 
 		/* http://json2csharp.com/ */
 		#region From json file
@@ -23,6 +20,7 @@ namespace ListGenerator
 		public string build { get; set; }
 		public string date { get; set; }
 		public string signature { get; set; }
+		public string icon { get; set; }
 		public string forum { get; set; }
 		public List<string> category { get; set; }
 		public string id { get; set; }
@@ -37,25 +35,11 @@ namespace ListGenerator
 
 		#region Generated
 
-		public string ShortName
-		{
-			get { return FileName.Substring(0, FileName.LastIndexOf('_')); }
-		}
-
 		public string Url
 		{
 			get { return Program.BaseModUrl + FileName; }
 		}
 
-		public string DateString
-		{
-			get { return Date.ToString("yyyy/MM/dd"); }
-		}
-
-		public string IconUrl
-		{
-			get { return Program.BaseIconsUrl + Icon; }
-		}
 		#endregion
 	}
 }

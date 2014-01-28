@@ -22,11 +22,6 @@ namespace ListGenerator
 			get { return ConfigurationManager.AppSettings["baseModUrl"]; }
 		}
 
-		public static string BaseIconsUrl
-		{
-			get { return ConfigurationManager.AppSettings["baseIconUrl"]; }
-		}
-
 		private void Run()
 		{
 			var modList = LoadMods();
@@ -34,7 +29,6 @@ namespace ListGenerator
 			modList = modList.OrderBy(x => x.identifier).ToList();
 
 			GenerateJSONFileNewtonSoft(modList);
-
 		}
 
 		private List<Mod> LoadMods()
@@ -49,7 +43,7 @@ namespace ListGenerator
 					var zipJSONFile = FindJSONFile(zip);
 
 					if (zipJSONFile == null)
-						throw new Exception("Unable to find modinfo.json file, or multiple modinfo.json files found");
+						throw new Exception("Unable to find modinfo.json file");
 
 					var stream = zip.GetInputStream(zipJSONFile);
 					var memoryStream = new MemoryStream();
@@ -59,7 +53,6 @@ namespace ListGenerator
 					var jsonFileContents = Encoding.UTF8.GetString(memoryStream.GetBuffer());
 
 					var nmod = JsonConvert.DeserializeObject<Mod>(jsonFileContents);
-					nmod.Date = GetLatestModifiedTime(zip);
 					nmod.FileName = new FileInfo(filename).Name;
 					res.Add(nmod);
 				}
@@ -95,7 +88,7 @@ namespace ListGenerator
 			return time.ToUniversalTime();
 		}
 		
-		private void GenerateJSONFileNewtonSoft(List<Mod> nmodList)
+		private void GenerateJSONFileNewtonSoft(List<Mod> modList)
 		{
 			StringBuilder sb = new StringBuilder();
 			StreamWriter sw = new StreamWriter("modlist.json");
@@ -104,41 +97,46 @@ namespace ListGenerator
 			{
 				writer.Formatting = Formatting.Indented;
 				writer.WriteStartObject();
-				foreach (var nmod in nmodList)
+				foreach (var mod in modList)
 				{
-					writer.WritePropertyName(nmod.id);
+					writer.WritePropertyName(mod.id);
 					writer.WriteStartObject();
 					writer.WritePropertyName("display_name");
-					writer.WriteValue(nmod.display_name);
+					writer.WriteValue(mod.display_name);
 					writer.WritePropertyName("description");
-					writer.WriteValue(nmod.description);
+					writer.WriteValue(mod.description);
 					writer.WritePropertyName("author");
-					writer.WriteValue(nmod.author);
+					writer.WriteValue(mod.author);
 					writer.WritePropertyName("version");
-					writer.WriteValue(nmod.version);
+					writer.WriteValue(mod.version);
 					writer.WritePropertyName("build");
-					writer.WriteValue(nmod.build);
+					writer.WriteValue(mod.build);
 					writer.WritePropertyName("date");
-					writer.WriteValue(nmod.date);
+					writer.WriteValue(mod.date);
 					writer.WritePropertyName("forum");
-					writer.WriteValue(nmod.forum);
+					writer.WriteValue(mod.forum);
 					writer.WritePropertyName("url");
-					writer.WriteValue(nmod.Url);
-					if (nmod.category != null)
+					writer.WriteValue(mod.Url);
+					if (mod.icon != null)
+					{
+						writer.WritePropertyName("icon");
+						writer.WriteValue(mod.icon);
+					}
+					if (mod.category != null)
 					{
 						writer.WritePropertyName("category");
 						writer.WriteStartArray();
-						foreach (var s in nmod.category)
+						foreach (var s in mod.category)
 						{
 							writer.WriteValue(s);
 						}
 						writer.WriteEnd();
 					}
-					if (nmod.requires != null)
+					if (mod.requires != null)
 					{
 						writer.WritePropertyName("requires");
 						writer.WriteStartArray();
-						foreach (var s in nmod.requires)
+						foreach (var s in mod.requires)
 						{
 							writer.WriteValue(s);
 						}
