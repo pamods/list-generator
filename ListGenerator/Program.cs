@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using ICSharpCode.SharpZipLib.Core;
 using ICSharpCode.SharpZipLib.Zip;
-using Nustache.Core;
 using Newtonsoft.Json;
 
 namespace ListGenerator
@@ -35,59 +34,17 @@ namespace ListGenerator
 
 		private void Run()
 		{
-
 			var modList = LoadMods();
 
-			ApplyDescriptionUnderrides(modList);
+			modList = modList.OrderBy(x => x.identifier).ToList();
 
-			modList = modList.OrderBy(x => x.ShortName).ToList();
-
-			GenerateIniFile(modList);
-
-			var nmodList = LoadnMods();
-
-			nmodList = nmodList.OrderBy(x => x.identifier).ToList();
-
-			GenerateJSONFileNewtonSoft(nmodList);
+			GenerateJSONFileNewtonSoft(modList);
 
 		}
 
 		private List<Mod> LoadMods()
 		{
 			var res = new List<Mod>();
-
-			foreach (var filename in Directory.EnumerateFiles("mods", "*.zip"))
-			{
-				try
-				{
-					var zip = new ZipFile(filename);
-					var zipIniFile = FindIniFile(zip);
-
-					if (zipIniFile == null)
-						throw new Exception("Unable to find ini file, or multiple ini files found");
-
-					var stream = zip.GetInputStream(zipIniFile);
-					var memoryStream = new MemoryStream();
-					StreamUtils.Copy(stream, memoryStream, new byte[4196]);
-
-					var iniFileContents = Encoding.UTF8.GetString(memoryStream.GetBuffer());
-
-					var mod = Mod.ParseIniFile(filename.Substring(5), iniFileContents);
-					mod.Date = GetLatestModifiedTime(zip);
-					res.Add(mod);
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine("Failed reading {0}, Error: {1}", filename, ex);
-				}
-			}
-
-			return res;
-		}
-
-		private List<nMod> LoadnMods()
-		{
-			var res = new List<nMod>();
 
 			foreach (var filename in Directory.EnumerateFiles("user_mods", "*.zip"))
 			{
@@ -106,7 +63,7 @@ namespace ListGenerator
 
 					var jsonFileContents = Encoding.UTF8.GetString(memoryStream.GetBuffer());
 
-					var nmod = JsonConvert.DeserializeObject<nMod>(jsonFileContents);
+					var nmod = JsonConvert.DeserializeObject<Mod>(jsonFileContents);
 					nmod.Date = GetLatestModifiedTime(zip);
 					nmod.FileName = new FileInfo(filename).Name;
 					res.Add(nmod);
@@ -118,18 +75,6 @@ namespace ListGenerator
 			}
 
 			return res;
-		}
-
-		private ZipEntry FindIniFile(ZipFile zip)
-		{
-			foreach (ZipEntry entry in zip)
-			{
-				if (entry.Name.EndsWith(".ini", StringComparison.InvariantCultureIgnoreCase))
-				{
-					return entry;
-				}
-			}
-			return null;
 		}
 
 		private ZipEntry FindJSONFile(ZipFile zip)
@@ -154,37 +99,8 @@ namespace ListGenerator
 			}
 			return time.ToUniversalTime();
 		}
-
-		/// <summary>
-		/// Apply descriptions from file unless the mod already has a description
-		/// </summary>
-		/// <param name="modList"></param>
-		private void ApplyDescriptionUnderrides(List<Mod> modList)
-		{
-			foreach (var line in File.ReadAllLines("templates/descriptions.txt").Where(x => x.Contains('=')))
-			{
-				var equalsIndex = line.IndexOf('=');
-				var key = line.Substring(0, equalsIndex);
-				var value = line.Substring(equalsIndex + 1);
-
-				var mod = modList.FirstOrDefault(m => m.ShortName == key);
-				if (mod != null && string.IsNullOrWhiteSpace(mod.Description))
-					mod.Description = value;
-			}
-		}
-
-		private void GenerateIniFile(List<Mod> modList)
-		{
-			Render.FileToFile("templates/ini.txt", new { mods = modList }, "modlist.ini", new RenderContextBehaviour { RaiseExceptionOnDataContextMiss = false, RaiseExceptionOnEmptyStringValue = false });
-		}
-
-		private void GenerateJSONFile(List<nMod> nmodList)
-		{
-			//not used anymore is a hassle to get the ending , right
-			Render.FileToFile("templates/json.txt", new { mods = nmodList }, "modlist.json", new RenderContextBehaviour { RaiseExceptionOnDataContextMiss = false, RaiseExceptionOnEmptyStringValue = false });
-		}
-
-		private void GenerateJSONFileNewtonSoft(List<nMod> nmodList)
+		
+		private void GenerateJSONFileNewtonSoft(List<Mod> nmodList)
 		{
 			StringBuilder sb = new StringBuilder();
 			StreamWriter sw = new StreamWriter("modlist.json");

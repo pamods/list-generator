@@ -1,25 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace ListGenerator
 {
 	internal class Mod
 	{
+
 		public string FileName { get; set; }
 		public DateTime Date { get; set; }
 		public string Icon;
 
-		#region From ini file
-
-		public string Name;
-		public string Author;
-		public string Link;
-		public string Category;
-		public string Version;
-		public string Build;
-		public string Description;
+		/* http://json2csharp.com/ */
+		#region From json file
+		public string context { get; set; }
+		public string identifier { get; set; }
+		public string display_name { get; set; }
+		public string description { get; set; }
+		public string author { get; set; }
+		public string version { get; set; }
+		public string build { get; set; }
+		public string date { get; set; }
+		public string signature { get; set; }
+		public string forum { get; set; }
+		public List<string> category { get; set; }
+		public string id { get; set; }
+		public int priority { get; set; }
+		public List<string> live_game { get; set; }
+		public List<string> settings { get; set; }
+		public List<string> global_mod_list { get; set; }
+		public List<string> requires { get; set; }
+		public bool enabled { get; set; }
 
 		#endregion
 
@@ -32,7 +44,7 @@ namespace ListGenerator
 
 		public string Url
 		{
-			get { return Program.BaseModUrl + FileName; }
+			get { return Program.BaseNewModUrl + FileName; }
 		}
 
 		public string DateString
@@ -45,58 +57,50 @@ namespace ListGenerator
 			get { return Program.BaseIconsUrl + Icon; }
 		}
 
-		#endregion
 
-		private Mod(string zipFileName, Dictionary<string, string> values)
+		public List<Dictionary<string, string>> requiresToString
 		{
-			FileName = zipFileName;
-
-			values.TryGetValue("name", out Name);
-			values.TryGetValue("author", out Author);
-			values.TryGetValue("link", out Link);
-			values.TryGetValue("category", out Category);
-			values.TryGetValue("version", out Version);
-			values.TryGetValue("build", out Build);
-			values.TryGetValue("description", out Description);
-
-			if (File.Exists("icons/" + ShortName + ".png"))
+			get
 			{
-				Icon = ShortName + ".png";
-			}
-			else
-			{
-				Icon = "default.png";
-				Console.WriteLine("Warning: {0} has no icon (icons/{1}.png) using default", zipFileName, ShortName);
-			}
-
-			if (Link == null)
-				Console.WriteLine("Warning: {0} has no Link", zipFileName);
-			if (Description == null)
-				Console.WriteLine("Warning: {0} has no Description", zipFileName);
-		}
-
-		public static Mod ParseIniFile(string zipFileName, string iniFileContents)
-		{
-			var lines = iniFileContents.Split(new[] { '\r', '\n', '\0' }, StringSplitOptions.RemoveEmptyEntries);
-
-			if (lines[0] != "[PAMM]")
-				throw new Exception("First line of ini file is not '[PAMM]'");
-
-			var values = new Dictionary<string, string>();
-
-			foreach (var line in lines.Skip(1))
-			{
-				var equalLocation = line.IndexOf('=');
-				if (equalLocation > 0)
+				var reqList = new List<Dictionary<string, string>>();
+				if (requires != null)
 				{
-					var key = line.Substring(0, equalLocation).ToLower();
-					var value = line.Substring(equalLocation + 1);
-
-					values.Add(key, value);
+					for (var i = 0; i < requires.Count; i++)
+					{
+						var dict = new Dictionary<string, string>();
+						dict["name"] = requires[i];
+						if (i + 1 != requires.Count)
+						{
+							dict["comma"] = ",";
+						}
+						reqList.Add(dict);
+					}
 				}
+				return reqList;
 			}
-
-			return new Mod(zipFileName, values);
 		}
+
+		public List<Dictionary<string, string>> categoryToString
+		{
+			get
+			{
+				var catList = new List<Dictionary<string, string>>();
+				if (category != null)
+				{
+					for (var i = 0; i < category.Count; i++)
+					{
+						var dict = new Dictionary<string, string>();
+						dict["name"] = category[i];
+						if (i + 1 != category.Count)
+						{
+							dict["comma"] = ",";
+						}
+						catList.Add(dict);
+					}
+				}
+				return catList;
+			}
+		}
+		#endregion
 	}
 }
