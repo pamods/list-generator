@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
-using System.Linq;
 using System.Text;
 using ICSharpCode.SharpZipLib.Core;
 using ICSharpCode.SharpZipLib.Zip;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace ListGenerator
 {
@@ -26,14 +26,12 @@ namespace ListGenerator
 		{
 			var modList = LoadMods();
 
-			modList = modList.OrderBy(x => x.identifier).ToList();
-
 			GenerateJSONFileNewtonSoft(modList);
 		}
 
-		private List<Mod> LoadMods()
+		private List<JObject> LoadMods()
 		{
-			var res = new List<Mod>();
+			var res = new List<JObject>();
 
 			foreach (var filename in Directory.EnumerateFiles("user_mods", "*.zip"))
 			{
@@ -49,12 +47,31 @@ namespace ListGenerator
 					var memoryStream = new MemoryStream();
 					StreamUtils.Copy(stream, memoryStream, new byte[4196]);
 
-
 					var jsonFileContents = Encoding.UTF8.GetString(memoryStream.GetBuffer());
+					JObject mod = JObject.Parse(jsonFileContents);
 
-					var nmod = JsonConvert.DeserializeObject<Mod>(jsonFileContents);
-					nmod.FileName = new FileInfo(filename).Name;
-					res.Add(nmod);
+					//Add missing things
+					mod.Add("url", BaseModUrl + new FileInfo(filename).Name);
+
+					//Remove things we dont want
+					mod.Remove("start");
+					mod.Remove("new_game");
+					mod.Remove("lobby");
+					mod.Remove("live_game");
+					mod.Remove("settings");
+					mod.Remove("system_editor");
+					mod.Remove("global_mod_list");
+					mod.Remove("server_browser");
+					mod.Remove("social");
+					mod.Remove("game_over");
+
+					mod.Remove("priority");
+					mod.Remove("enabled");
+					mod.Remove("context");
+					mod.Remove("identifier");
+					mod.Remove("signature");
+
+					res.Add(mod);
 				}
 				catch (Exception ex)
 				{
@@ -77,75 +94,19 @@ namespace ListGenerator
 			return null;
 		}
 
-		private DateTime GetLatestModifiedTime(ZipFile zip)
+		private void GenerateJSONFileNewtonSoft(List<JObject> modList)
 		{
-			DateTime time = DateTime.MinValue;
-			foreach (ZipEntry entry in zip)
+			using (StreamWriter sw = new StreamWriter("modlist.json"))
 			{
-				if (entry.DateTime > time)
-					time = entry.DateTime;
-			}
-			return time.ToUniversalTime();
-		}
-		
-		private void GenerateJSONFileNewtonSoft(List<Mod> modList)
-		{
-			StringBuilder sb = new StringBuilder();
-			StreamWriter sw = new StreamWriter("modlist.json");
-
-			using (JsonWriter writer = new JsonTextWriter(sw))
-			{
-				writer.Formatting = Formatting.Indented;
-				writer.WriteStartObject();
+				var dict = new SortedDictionary<string, JObject>();
 				foreach (var mod in modList)
 				{
-					writer.WritePropertyName(mod.id);
-					writer.WriteStartObject();
-					writer.WritePropertyName("display_name");
-					writer.WriteValue(mod.display_name);
-					writer.WritePropertyName("description");
-					writer.WriteValue(mod.description);
-					writer.WritePropertyName("author");
-					writer.WriteValue(mod.author);
-					writer.WritePropertyName("version");
-					writer.WriteValue(mod.version);
-					writer.WritePropertyName("build");
-					writer.WriteValue(mod.build);
-					writer.WritePropertyName("date");
-					writer.WriteValue(mod.date);
-					writer.WritePropertyName("forum");
-					writer.WriteValue(mod.forum);
-					writer.WritePropertyName("url");
-					writer.WriteValue(mod.Url);
-					if (mod.icon != null)
-					{
-						writer.WritePropertyName("icon");
-						writer.WriteValue(mod.icon);
-					}
-					if (mod.category != null)
-					{
-						writer.WritePropertyName("category");
-						writer.WriteStartArray();
-						foreach (var s in mod.category)
-						{
-							writer.WriteValue(s);
-						}
-						writer.WriteEnd();
-					}
-					if (mod.requires != null)
-					{
-						writer.WritePropertyName("requires");
-						writer.WriteStartArray();
-						foreach (var s in mod.requires)
-						{
-							writer.WriteValue(s);
-						}
-						writer.WriteEnd();
-					}
-					writer.WriteEndObject();
-
+					dict.Add((string)mod.GetValue("id"), mod);
+					mod.Remove("id");
 				}
-				writer.WriteEndObject();
+
+				sw.Write(JsonConvert.SerializeObject(dict, Formatting.Indented));
+				sw.Close();
 			}
 		}
 	}
