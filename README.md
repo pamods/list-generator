@@ -1,5 +1,4 @@
 list-generator
 ==============
 
-
-We use Mustache templates, see http://mustache.github.io/mustache.5.html
+Program to generate modlist.json from modinfo.json files in zipped PA mods for use in PA Mod Manager.
