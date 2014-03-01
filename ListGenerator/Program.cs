@@ -26,7 +26,9 @@ namespace ListGenerator
         {
             var modList = LoadMods();
 
+            Console.WriteLine("Trying to generate new modlist.json...");
             GenerateJSONFileNewtonSoft(modList);
+            Console.WriteLine("ListGen Complete...");
             //Console.ReadLine();
         }
 
@@ -34,7 +36,7 @@ namespace ListGenerator
         {
             var res = new List<JObject>();
 
-            foreach (var filename in Directory.EnumerateFiles("user_mods", "*.zip"))
+            foreach (var filename in Directory.GetFiles("user_mods", "*.zip"))
             {
                 try
                 {
