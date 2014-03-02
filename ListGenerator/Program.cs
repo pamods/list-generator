@@ -57,16 +57,27 @@ namespace ListGenerator
                     mod.Add("url", BaseModUrl + new FileInfo(filename).Name);
 
                     //Remove things we dont want
+                    //old scenes
                     mod.Remove("start");
+                    mod.Remove("connect_to_game");
+                    mod.Remove("icon_atlas");
+                    mod.Remove("special_icon_atlas");
+                    mod.Remove("matchmaking");
+                    mod.Remove("transit");
+                    mod.Remove("replay_browser");
+                    mod.Remove("live_game_hover");
                     mod.Remove("new_game");
                     mod.Remove("lobby");
+                    mod.Remove("load_planet");
                     mod.Remove("live_game");
+                    mod.Remove("live_game_econ");
                     mod.Remove("settings");
                     mod.Remove("system_editor");
                     mod.Remove("global_mod_list");
                     mod.Remove("server_browser");
                     mod.Remove("social");
                     mod.Remove("game_over");
+                    mod.Remove("scenes");
 
                     mod.Remove("priority");
                     mod.Remove("enabled");
