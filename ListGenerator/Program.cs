@@ -12,123 +12,48 @@ namespace ListGenerator
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            new Program().Run();
-        }
-
-        public static string BaseModUrl
-        {
-            get { return ConfigurationManager.AppSettings["baseModUrl"]; }
-        }
-
-        private void Run()
-        {
-            var modList = LoadMods();
-
-            Console.WriteLine("Trying to generate new modlist.json...");
-            GenerateJSONFileNewtonSoft(modList);
-            Console.WriteLine("ListGen Complete...");
-            //Console.ReadLine();
-        }
-
-        private List<JObject> LoadMods()
-        {
-            var res = new List<JObject>();
-
-            foreach (var filename in Directory.GetFiles("user_mods", "*.zip"))
-            {
-                try
+            try {
+                if (args.Length == 0)
                 {
-                    var zip = new ZipFile(filename);
-                    var zipJSONFile = FindJSONFile(zip);
-
-                    if (zipJSONFile == null)
-                        throw new Exception("Unable to find modinfo.json file");
-
-                    var stream = zip.GetInputStream(zipJSONFile);
-                    var memoryStream = new MemoryStream();
-                    StreamUtils.Copy(stream, memoryStream, new byte[4196]);
-
-                    var jsonFileContents = Encoding.UTF8.GetString(memoryStream.GetBuffer());
-                    JObject mod = JObject.Parse(jsonFileContents);
-
-                    //Add missing things
-                    mod.Add("url", BaseModUrl + new FileInfo(filename).Name);
-
-                    //Remove things we dont want
-                    //old scenes
-                    mod.Remove("start");
-                    mod.Remove("connect_to_game");
-                    mod.Remove("icon_atlas");
-                    mod.Remove("special_icon_atlas");
-                    mod.Remove("matchmaking");
-                    mod.Remove("transit");
-                    mod.Remove("replay_browser");
-                    mod.Remove("live_game_hover");
-                    mod.Remove("new_game");
-                    mod.Remove("lobby");
-                    mod.Remove("load_planet");
-                    mod.Remove("live_game");
-                    mod.Remove("live_game_econ");
-                    mod.Remove("settings");
-                    mod.Remove("system_editor");
-                    mod.Remove("global_mod_list");
-                    mod.Remove("server_browser");
-                    mod.Remove("social");
-                    mod.Remove("game_over");
-                    mod.Remove("scenes");
-
-                    mod.Remove("priority");
-                    mod.Remove("enabled");
-                    mod.Remove("context");
-                    mod.Remove("identifier");
-                    mod.Remove("signature");
-
-                    res.Add(mod);
+                    new ModListGenerator2().Refresh();
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine("Failed reading {0}, Error: {1}", filename, ex);
-                }
-            }
-
-            return res;
-        }
-
-        private ZipEntry FindJSONFile(ZipFile zip)
-        {
-            foreach (ZipEntry entry in zip)
-            {
-                if (entry.Name.EndsWith("/modinfo.json", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    return entry;
-                }
-            }
-            return null;
-        }
-
-        private void GenerateJSONFileNewtonSoft(List<JObject> modList)
-        {
-            using (StreamWriter sw = new StreamWriter("modlist.json"))
-            {
-                var dict = new SortedDictionary<string, JObject>();
-                foreach (var mod in modList)
-                {
-                    try
+                    var action = args[0];
+                    if (action == "add" && args.Length == 3)
                     {
-                        dict.Add((string)mod.GetValue("id"), mod);
-                        mod.Remove("id");
+                        var identifier = args[1];
+                        var url = args[2];
+                        new ModListGenerator2().Add(identifier, url);
                     }
-                    catch (Exception ex)
+                    else if (action == "remove" && args.Length == 2)
                     {
-                        Console.WriteLine(ex.Message);
+                        var identifier = args[1];
+                        new ModListGenerator2().Remove(identifier);
+                    }
+                    else
+                    {
+                        Usage();
+                        return 1;
                     }
                 }
 
-                sw.Write(JsonConvert.SerializeObject(dict, Formatting.Indented));
-                sw.Close();
+                Console.WriteLine();
+                new ModListGenerator().Run();
             }
+            catch (Exception e) {
+                Console.WriteLine(e.Message);
+                return 2;
+            }
+
+            return 0;
+        }
+
+        static void Usage()
+        {
+            Console.WriteLine("usage: listgenerator [add identifier url|remove identifier]");
         }
     }
 }
