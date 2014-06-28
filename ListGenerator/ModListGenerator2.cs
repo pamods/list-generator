@@ -18,29 +18,6 @@ namespace ListGenerator
     {
         private const string Filename = "modlist2.json";
 
-        private List<string> Properties = new List<string>
-        {
-            "context",
-            "identifier",
-            "id", // deprecated
-            "author",
-            "version",
-            "build",
-            "date",
-            "display_name",
-            "display_name_de",
-            "display_name_fr",
-            "display_name_nl",
-            "description",
-            "description_de",
-            "description_fr",
-            "description_nl",
-            "requires",
-            "forum",
-            "category",
-            "icon",
-        };
-
         private string BaseModUrl
         {
             get { return ConfigurationManager.AppSettings["baseModUrl"]; }
@@ -70,8 +47,7 @@ namespace ListGenerator
 
             File.Delete(tempfile);
 
-            modinfo = CleanupModInfo(modinfo);
-            modinfo["url"] = url;
+            modinfo.url = url;
 
             var modlist = LoadModList();
             modlist = RemoveMod(modlist, identifier);
@@ -87,8 +63,6 @@ namespace ListGenerator
         {
             Console.WriteLine("Remove '{0}' from {1}...", identifier, Filename);
 
-            var found = false;
-
             var modlist = LoadModList();
             var nbentries = modlist.Count;
 
@@ -100,9 +74,9 @@ namespace ListGenerator
             WriteModList(modlist);
         }
 
-        private List<JObject> LoadModList()
+        private List<ModInfo> LoadModList()
         {
-            var modlist = new List<JObject>();
+            var modlist = new List<ModInfo>();
 
             modlist.AddRange(LoadExternalMods());
             modlist.AddRange(LoadLocalMods("client", "user_mods"));
@@ -111,22 +85,21 @@ namespace ListGenerator
             return modlist;
         }
 
-        private List<JObject> LoadExternalMods()
+        private List<ModInfo> LoadExternalMods()
         {
-            var modlist = new List<JObject>();
+            var modlist = new List<ModInfo>();
 
-            using (var jsonreader = new JsonTextReader(new StreamReader(Filename)))
+            using (var reader = new StreamReader(Filename))
             {
-                var jmodlist = JToken.ReadFrom(jsonreader) as JArray;
-                if (jmodlist != null)
-                {
-                    foreach (JObject modinfo in jmodlist)
-                    {
-                        string url = null;
-                        if(modinfo["url"] != null)
-                            url = modinfo["url"].Value<string>();
+                var json = reader.ReadToEnd();
 
-                        if (url == null || !url.StartsWith(BaseModUrl))
+                var oldlist = JsonConvert.DeserializeObject<List<ModInfo>>(json);
+
+                if (oldlist != null)
+                {
+                    foreach (ModInfo modinfo in oldlist)
+                    {
+                        if (modinfo.url == null || !modinfo.url.StartsWith(BaseModUrl))
                         {
                             modlist.Add(modinfo);
                         }
@@ -137,9 +110,9 @@ namespace ListGenerator
             return modlist;
         }
 
-        private List<JObject> LoadLocalMods(string context, string moddir)
+        private List<ModInfo> LoadLocalMods(string context, string moddir)
         {
-            var modlist = new List<JObject>();
+            var modlist = new List<ModInfo>();
 
             if (!Directory.Exists(moddir))
                 return modlist;
@@ -152,16 +125,14 @@ namespace ListGenerator
                 {
                     var modinfo = GetModInfo(modfile, null); ;
 
-                    if (modinfo == null || modinfo["context"] == null || !modinfo["context"].Value<String>().Equals(context))
+                    if (modinfo == null || context != modinfo.context)
                     {
                         Console.WriteLine("No '{0}' mod found in '{1}'.", context, filename);
                         continue;
                     }
 
-                    modinfo = CleanupModInfo(modinfo);
-
-                    //Add download url
-                    modinfo.Add("url", BaseModUrl + moddir + "/" + filename);
+                    //download url
+                    modinfo.url = BaseModUrl + moddir + "/" + filename;
 
                     modlist.Add(modinfo);
                 }
@@ -174,7 +145,7 @@ namespace ListGenerator
             return modlist;
         }
 
-        private JObject GetModInfo(string modfile, string identifier)
+        private ModInfo GetModInfo(string modfile, string identifier)
         {
             using (var zipfile = new ZipFile(modfile))
             {
@@ -182,10 +153,12 @@ namespace ListGenerator
                 {
                     if (entry.Name == "modinfo.json" || entry.Name.EndsWith("/modinfo.json", StringComparison.InvariantCultureIgnoreCase))
                     {
-                        using (var jsonreader = new JsonTextReader(new StreamReader(zipfile.GetInputStream(entry))))
+                        using (var reader = new StreamReader(zipfile.GetInputStream(entry)))
                         {
-                            var modinfo = JToken.ReadFrom(jsonreader) as JObject;
-                            if (identifier == null || modinfo["identifier"].Value<string>() == identifier)
+                            var json = reader.ReadToEnd();
+                            var modinfo = JsonConvert.DeserializeObject<ModInfo>(json);
+
+                            if (identifier == null || modinfo.identifier == identifier)
                             {
                                 return modinfo;
                             }
@@ -197,37 +170,20 @@ namespace ListGenerator
             return null;
         }
 
-        private JObject CleanupModInfo(JObject modinfo)
-        {
-            var modinfo2 = new JObject();
-            foreach (var property in modinfo.Properties())
-            {
-                if (Properties.Contains(property.Name))
-                {
-                    modinfo2.Add(property);
-                }
-            }
-            return modinfo2;
-        }
-
-        private List<JObject> RemoveMod(List<JObject> modlist, string identifier)
+        private List<ModInfo> RemoveMod(List<ModInfo> modlist, string identifier)
         {
             var nbentries = modlist.Count;
-            var modlist2 = new List<JObject>();
+            var modlist2 = new List<ModInfo>();
 
             foreach (var mod in modlist)
             {
-                if (mod["identifier"].Value<string>() == identifier)
+                if (mod.identifier == identifier)
                 {
-                    string url = null;
-                    if (mod["url"] != null)
-                        url = mod["url"].Value<string>();
-
-                    if (url != null && url.StartsWith(BaseModUrl))
+                    if (mod.url != null && mod.url.StartsWith(BaseModUrl))
                     {
-                        url.Replace('\\','/'); // safety ...
-                        var modfile = url.Substring(url.LastIndexOf("/") + 1);
-                        var context = mod["context"].Value<string>();
+                        mod.url = mod.url.Replace('\\', '/'); // safety ...
+                        var modfile = mod.url.Substring(mod.url.LastIndexOf("/", StringComparison.Ordinal) + 1);
+                        var context = mod.context;
                         var moddir = "user_mods";
                         if (context == "server")
                             moddir = "server_mods";
@@ -251,28 +207,66 @@ namespace ListGenerator
             return modlist2;
         }
 
-        private void WriteModList(List<JObject> modlist)
+        private void WriteModList(List<ModInfo> modlist)
         {
             modlist.Sort(new MostListComparer());
 
             using (var sw = new StreamWriter(Filename))
+            using (var jw = new JsonTextWriter(sw))
             {
-                sw.Write(JsonConvert.SerializeObject(modlist, Formatting.Indented));
+                JsonSerializer serializer = new JsonSerializer();
+                serializer.NullValueHandling = NullValueHandling.Ignore;
+                serializer.Formatting = Formatting.Indented;
+
+                serializer.Serialize(jw, modlist);
             }
 
             Console.WriteLine("{0} has been written", Filename);
         }
 
-        private class MostListComparer : IComparer<JObject>
+        private class MostListComparer : IComparer<ModInfo>
         {
-            public int Compare(JObject x, JObject y) {
-                var result = String.Compare(x["context"].Value<String>(), y["context"].Value<String>(), StringComparison.Ordinal);
+            public int Compare(ModInfo x, ModInfo y)
+            {
+                var result = String.Compare(x.context, y.context, StringComparison.Ordinal);
                 
                 if (result != 0)
                     return result;
 
-                return String.Compare(x["identifier"].Value<String>(), y["identifier"].Value<String>(), StringComparison.Ordinal);
+                return String.Compare(x.identifier, y.identifier, StringComparison.Ordinal);
             }
         }
+    }
+
+    class ModInfo
+    {
+        // Uber
+        public string context { get; set; }
+        public string identifier { get; set; }
+        public string author { get; set; }
+        public string version { get; set; }
+        public string display_name { get; set; }
+        public string description { get; set; }
+        public List<string> dependencies { get; set; }
+        //public string signature { get; set; }
+        //public bool enabled { get; set; }
+        
+        // PAMM
+        public string build { get; set; }
+        public string date { get; set; }
+        public string display_name_de { get; set; }
+        public string display_name_fr { get; set; }
+        public string display_name_nl { get; set; }
+        public string description_de { get; set; }
+        public string description_fr { get; set; }
+        public string description_nl { get; set; }
+        public string forum { get; set; }
+        public List<string> category { get; set; }
+        public string icon { get; set; }
+        public string url { get; set; }
+        
+        // deprecated
+        public string id { get; set; }
+        public string[] requires { get; set; }
     }
 }
