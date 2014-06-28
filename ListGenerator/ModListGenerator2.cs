@@ -29,6 +29,7 @@ namespace ListGenerator
 
             var modlist = LoadModList();
 
+            FixDependencies(modlist);
             WriteModList(modlist);
         }
 
@@ -54,6 +55,7 @@ namespace ListGenerator
 
             modlist.Add(modinfo);
 
+            FixDependencies(modlist);
             WriteModList(modlist);
 
             Console.WriteLine("1 entry added");
@@ -71,6 +73,7 @@ namespace ListGenerator
             if (nbentries == modlist.Count)
                 throw new ApplicationException(String.Format("'{0}' not found.", identifier));
 
+            FixDependencies(modlist);
             WriteModList(modlist);
         }
 
@@ -205,6 +208,33 @@ namespace ListGenerator
             Console.WriteLine("{0} entry removed", nbentries - modlist2.Count);
 
             return modlist2;
+        }
+
+        private void FixDependencies(List<ModInfo> modlist)
+        {
+            var compatibility = new Dictionary<String,String>();
+
+            foreach(var mod in modlist)
+            {
+                var id = mod.id ?? mod.identifier;
+                compatibility[id] = mod.identifier;
+            }
+
+            foreach(var mod in modlist)
+            {
+                if(mod.requires != null) {
+                    mod.dependencies = new List<string>();
+                    foreach(var dependency in mod.requires)
+                    {
+                        string id;
+                        if(compatibility.TryGetValue(dependency, out id))
+                            mod.dependencies.Add(id);
+                        else
+                            mod.dependencies.Add(dependency);
+                    }
+                    mod.requires = null;
+                }
+            }
         }
 
         private void WriteModList(List<ModInfo> modlist)
