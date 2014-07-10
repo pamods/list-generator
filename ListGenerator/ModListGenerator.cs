@@ -114,7 +114,10 @@ namespace ListGenerator
                 {
                     try
                     {
-                        dict.Add((string)mod.GetValue("id"), mod);
+                        var id = (string)mod.GetValue("id");
+                        if (id == null)
+                            continue;
+                        dict.Add(id, mod);
                         mod.Remove("id");
                     }
                     catch (Exception ex)
