@@ -218,6 +218,7 @@ namespace ListGenerator
             {
                 var id = mod.id ?? mod.identifier;
                 compatibility[id] = mod.identifier;
+                mod.id = null;
             }
 
             foreach(var mod in modlist)

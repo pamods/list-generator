@@ -39,9 +39,6 @@ namespace ListGenerator
                         return 1;
                     }
                 }
-
-                Console.WriteLine();
-                new ModListGenerator().Run();
             }
             catch (Exception e) {
                 Console.WriteLine(e.Message);
